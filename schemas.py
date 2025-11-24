@@ -35,6 +35,7 @@ class ProductoBase(BaseModel):
     stock: conint(ge=0) = 0
     activo: Optional[bool] = True
     categoria_id: int
+    media_url: Optional[str] = None
 
 
 class ProductoCreate(ProductoBase):
@@ -50,6 +51,7 @@ class ProductoUpdate(BaseModel):
     stock: Optional[int] = Field(None, ge=0)
     activo: Optional[bool] = None
     categoria_id: Optional[int] = None
+    media_url: Optional[str] = None
 
 
 class ProductoResponse(ProductoBase):

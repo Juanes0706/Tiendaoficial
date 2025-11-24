@@ -1,14 +1,25 @@
-from sqlmodel import SQLModel, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
+import os
 
-# URL de la base de datos local SQLite
-DATABASE_URL = "sqlite:///tienda.db"
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Crear el motor de conexión
-engine = create_engine(DATABASE_URL, echo=True)
+if not DATABASE_URL:
+    raise ValueError("La variable de entorno DATABASE_URL no está definida")
 
-# Función para inicializar la base de datos
-def init_db():
-    """
-    Crea las tablas definidas en los modelos si no existen.
-    """
-    SQLModel.metadata.create_all(engine)
+DATABASE_URL_ASYNC = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+
+async_engine = create_async_engine(DATABASE_URL_ASYNC, echo=True)
+
+AsyncSessionLocal = sessionmaker(
+    async_engine, expire_on_commit=False, class_=AsyncSession
+)
+
+Base = declarative_base()
+
+async def get_async_db():
+    async with AsyncSessionLocal() as session:
+        yield session

@@ -1,8 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from models import Categoria, Producto
 from database import init_db
 import crud
 from schemas import CategoriaUpdate, ProductoUpdate, CategoriaConProductos, ProductoResponse, ProductoListResponse, RestarStock, CategoriaEliminada, ProductoEliminado, CategoriaCreate, ProductoCreate
+from supabase_utils import upload_image_to_supabase
+from typing import Optional
 
 app = FastAPI(title="API Tienda con SQLModel")
 
@@ -67,8 +69,28 @@ async def obtener_categorias_eliminadas():
 # Endpoints de productos
 
 @app.post("/productos/", response_model=Producto)
-async def crear_producto(producto: ProductoCreate):
-    producto_creado = await crud.crear_producto(producto)
+async def crear_producto(
+    nombre: str = Form(...),
+    descripcion: Optional[str] = Form(None),
+    precio: float = Form(...),
+    stock: int = Form(...),
+    activo: bool = Form(True),
+    categoria_id: int = Form(...),
+    imagen: Optional[UploadFile] = File(None)
+):
+    imagen_url = None
+    if imagen:
+        imagen_url = await upload_image_to_supabase(imagen)
+    producto_data = ProductoCreate(
+        nombre=nombre,
+        descripcion=descripcion,
+        precio=precio,
+        stock=stock,
+        activo=activo,
+        categoria_id=categoria_id,
+        imagen_url=imagen_url
+    )
+    producto_creado = await crud.crear_producto(producto_data)
     if not producto_creado:
         raise HTTPException(status_code=400, detail="Producto no pudo ser creado")
     return producto_creado
@@ -97,8 +119,29 @@ async def obtener_producto_con_categoria(id: int):
     return producto    
 
 @app.put("/productos/{id}", response_model=Producto)
-async def actualizar_producto(id: int, producto: ProductoUpdate):
-    producto_actualizado = await crud.actualizar_producto(id, producto)
+async def actualizar_producto(
+    id: int,
+    nombre: Optional[str] = Form(None),
+    descripcion: Optional[str] = Form(None),
+    precio: Optional[float] = Form(None),
+    stock: Optional[int] = Form(None),
+    activo: Optional[bool] = Form(None),
+    categoria_id: Optional[int] = Form(None),
+    imagen: Optional[UploadFile] = File(None)
+):
+    imagen_url = None
+    if imagen:
+        imagen_url = await upload_image_to_supabase(imagen)
+    producto_update_data = ProductoUpdate(
+        nombre=nombre,
+        descripcion=descripcion,
+        precio=precio,
+        stock=stock,
+        activo=activo,
+        categoria_id=categoria_id,
+        imagen_url=imagen_url
+    )
+    producto_actualizado = await crud.actualizar_producto(id, producto_update_data)
     if not producto_actualizado:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return producto_actualizado    

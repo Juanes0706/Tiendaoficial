@@ -20,6 +20,7 @@ class Producto(SQLModel, table=True):
     stock: int
     activo: bool = Field(default=True) 
     deleted_at: Optional[datetime] = None
+    media_url: Optional[str] = None
 
     categoria_id: int = Field(foreign_key="categoria.id")
     categoria: Optional[Categoria] = Relationship(back_populates="productos")
